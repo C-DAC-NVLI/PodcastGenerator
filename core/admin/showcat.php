@@ -18,7 +18,26 @@ if (isset($_REQUEST['GLOBALS']) OR isset($_REQUEST['absoluteurl']) OR isset($_RE
 
 /*
 include ("$absoluteurl"."components/xmlparser/loadparser.php"); */
+        
+        
+include ("$absoluteurl"."core/admin/queries.php");  
+        
+//        require_once "queries.php";
 
+//echo "$absoluteurl"."core/admin/queries.php";
+
+//echo getCategories();
+
+
+$my_array_data = json_decode(getCategories(), TRUE);
+
+//echo $my_array_data;
+
+//var_dump($my_array_data);
+
+$category = json_decode(getCategories());
+// access title of $book object
+//echo $category[0]->category_name; // JavaScript: The Definitive Guide 
 
 include ("$absoluteurl"."core/admin/readXMLcategories.php");
 
@@ -63,7 +82,7 @@ if (file_exists("$absoluteurl"."categories.xml")) {
 	}
 	*/
 	
-	$PG_mainbody .= '<br /><select class="form-control" style="max-width:220px" name="category[]"';
+	$PG_mainbody .= '<br /><select class="form-control" style="max-width:220px, height:40px !important" name="category[]"';
 
 	if ($n<5) { //height of the category form
 		$PG_mainbody .= 'size="'.$n.'" ';
@@ -81,7 +100,7 @@ if (file_exists("$absoluteurl"."categories.xml")) {
 
 	$firstselect = 0; //value to determine the first category of the form, which will be selected by default
 
-	foreach ($arr as $key => $val) {
+	/*foreach ($arr as $key => $val) {
 		//$PG_mainbody .= "cat[" . $key . "] = " . $val . "<br>";
 
 		if ($firstselect == "0" AND $preselectcat != "yes") { //pre-select the first category (except in edit mode which is set in this var: $preselectcat == "yes")
@@ -102,9 +121,32 @@ if (file_exists("$absoluteurl"."categories.xml")) {
 		$PG_mainbody .= '>' . $val .'</option>';
 	}
 
-	$firstselect++; //increment 
+	$firstselect++; //increment */
+        
+        
+        foreach ($category as $cat) {
+		//$PG_mainbody .= "cat[" . $key . "] = " . $val . "<br>";
 
-}
+	if ($firstselect == "0") { 
+		$PG_mainbody .= '<option value=\'' . $cat->category_name . '\' selected>' . $cat->category_name .'</option>';
+        } else {
+            
+            $PG_mainbody .= '<option value=\'' . $cat->category_name  . '\' ';
+
+		//if ($preselectcat == "yes") {
+
+			/*if ($text_category1 == $cat->category_name  OR $text_category2 == $cat->category_name  OR $text_category3 == $cat->category_name ) {
+
+				$PG_mainbody .= 'selected';
+
+			}*/
+		//}	
+		$PG_mainbody .= '>' . $cat->category_name  .'</option>';
+        }
+	$firstselect++;
+            
+        }
+       
 
 $PG_mainbody .= '</select>';
 
@@ -123,7 +165,5 @@ else
 		<input type="submit" value="'._("Add").'" onClick="showNotify(\''._("Adding...").'\');">
 		';
 }
-
-
 
 ?>

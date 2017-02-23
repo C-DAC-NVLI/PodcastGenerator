@@ -8,6 +8,9 @@
 # This is Free Software released under the GNU/GPL License.
 ############################################################
 
+
+include ("$absoluteurl"."core/admin/queries.php");  
+
 ########### Security code, avoids cross-site scripting (Register Globals ON)
 if (isset($_REQUEST['GLOBALS']) OR isset($_REQUEST['absoluteurl']) OR isset($_REQUEST['amilogged']) OR isset($_REQUEST['theme_path'])) { exit; }
 ########### End
@@ -183,7 +186,7 @@ if ($fileExtension==$podcast_filetype) { //003 (if file extension is accepted, g
 
 	##############
 	############## end filename depuration
-
+                
 
 if ($strictfilenamepolicy == "yes") 	$filenamechanged = date('Y-m-d')."_".$filenameWithoutExtension; //add date, to order files in mp3 players
 else $filenamechanged = $filenameWithoutExtension;
@@ -309,7 +312,10 @@ else { //if file, description or title not present...
 }
 
 
+$date = $_POST['Year']."-".$_POST['Month']."-".$_POST['Day'];
+$time = $_POST['Hour'].":".$_POST['Minute'].":00";
 
+insetData($title, $description, $long_description, $keywords, $explicit, $auth_name, $auth_email, 20, 20, 20, 20, $file, $date, $time);
 
 
 
