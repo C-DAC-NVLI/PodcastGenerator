@@ -207,6 +207,7 @@ else $filenamechanged = $filenameWithoutExtension;
 
 	$PG_mainbody .= _("File Renamed:")." <i>$filenamechanged$filesuffix.$fileExtension</i><br />";
 
+        
 	$uploadFile == NULL ;
 
 	#$PG_mainbody .= "<br>Uploaded file:$uploadFile<br>";
@@ -315,7 +316,38 @@ else { //if file, description or title not present...
 $date = $_POST['Year']."-".$_POST['Month']."-".$_POST['Day'];
 $time = $_POST['Hour'].":".$_POST['Minute'].":00";
 
-insetData($title, $description, $long_description, $keywords, $explicit, $auth_name, $auth_email, 20, 20, 20, 20, $file, $date, $time);
+ $fileTemp = $filenamechanged.$filesuffix.".".$fileExtension;
+ 
+ 
+ 
+  $episodeID3 = array(); //Declaration
+  
+    //if ($readID3 == TRUE) {
+        	
+	//Episode size and data from GETID3 from retrieveMediaFileDetails function
+	//NB retrieveMediaFileDetails returns: [0] $ThisFileSizeInMB, [1] $file_duration, [2] $file_bitrate, [3] $file_freq, [4] $thisFileTitleID3, [5] $thisFileArtistID3
+  
+
+	$episodeID3 = retrieveMediaFileDetails ($filefullpath,$absoluteurl,$filenamechanged.$filesuffix,$img_dir);
+        
+        if(isset($episodeID3[0]) AND $episodeID3[0]!= NULL){
+            $file_size = $episodeID3[0];
+        }
+	
+        if(isset($episodeID3[1]) AND $episodeID3[1]!= NULL){
+			$file_duration = $episodeID3[1];
+        }
+        
+        //NB variable bitrate is rounded to int
+        if(isset($episodeID3[2]) AND $episodeID3[2]!= NULL){
+            $file_bitrate = round($episodeID3[2]);
+	}
+	if(isset($episodeID3[3]) AND $episodeID3[3]!= NULL){
+            $file_frequency = $episodeID3[3];
+	}
+    //}
+ 
+insetData($title, $description, $long_description, $keywords, $explicit, $auth_name, $auth_email, $file_size, $file_duration, $file_bitrate, $file_frequency,$fileTemp, $fileExtension, $date, $time);
 
 
 

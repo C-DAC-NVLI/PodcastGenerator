@@ -31,7 +31,7 @@ function getCategories() {
 
 
 function insetData($title, $short_dec, $long_dec, $keywords, $explicit_content, $author_name, $author_email, $file_size, $file_duration, $file_bitrate, $file_frequency,
-        $file_name_with_ext, $date, $time) {
+        $file_name_with_ext, $file_type, $date, $time) {
     
     if($explicit_content == "no") {
         $explicit_content = "0";
@@ -41,13 +41,38 @@ function insetData($title, $short_dec, $long_dec, $keywords, $explicit_content, 
     
     $query = "INSERT INTO `podcast_episode_metadata` (`id`, `user_id`, `title`, `short_desc`, `long_desc`, `keywords`, 
             `explicit_content`, `author_name`, `author_email`, `file_size`, `file_duration`, `file_bitrate`, `file_frequency`, 
-            `file_name_with_ext`, `publish_date`, `publish_time`) 
+            `file_name_with_ext`, `file_type`, `publish_date`, `publish_time`) 
                                               VALUES (NULL, '1', '$title', '$short_dec','$long_dec', '$keywords',
             '$explicit_content', '$author_name', '$author_email', '$file_size', '$file_duration', '$file_bitrate', '$file_frequency', 
-            '$file_name_with_ext', '$date', '$time');";
+            '$file_name_with_ext', '$file_type', '$date', '$time');";
     
    // echo $query;
     $sql=mysql_query($query);
 }
+
+
+function readData() {
+    $sql=mysql_query("SELECT * FROM `podcast_episode_metadata` ");
+    while($row=mysql_fetch_assoc($sql))
+    // array for JSON response
+     $output[]=$row;
+ //       print(json_encode($output));
+    
+    return json_encode($output);
+
+}
+
+
+function readSingleData($id) {
+    $sql=mysql_query("SELECT * FROM `podcast_episode_metadata` WHERE `id`=$id ");
+    while($row=mysql_fetch_assoc($sql))
+    // array for JSON response
+     $output[]=$row;
+ //       print(json_encode($output));
+    
+    return json_encode($output);
+
+}
+
 
 ?>

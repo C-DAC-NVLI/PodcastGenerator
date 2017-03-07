@@ -59,7 +59,7 @@ if (isset($_GET['p'])) if ($_GET['p']=="admin") { // if admin is called from the
 			include("$absoluteurl"."core/admin/edit.php");
 		$PG_mainbody .= '</div>'; //close episodebox 
 		} 
-
+                
 		elseif (isset($_GET['do']) AND $_GET['do']=="delete") {
 		$PG_mainbody .= '<div class=" episodebox">';
 			include("$absoluteurl"."core/admin/delete.php");

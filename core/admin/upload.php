@@ -34,7 +34,7 @@ else {
 		# convert max upload size set in config.php in megabytes
 		$max_upload_form_size_MB = $max_upload_form_size/1048576;
 		$max_upload_form_size_MB = round($max_upload_form_size_MB, 2);
-
+                
 		$showmin = min($max_upload_form_size_MB, ini_get('upload_max_filesize')+0, ini_get('post_max_size')+0); // min function
 		// Note: if I add +0 it eliminates the "M" (e.g. 8M, 9M) and this solves some issues with the "min" function
 		#############################

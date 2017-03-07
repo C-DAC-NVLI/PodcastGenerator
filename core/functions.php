@@ -375,6 +375,8 @@ function displaySocialNetworkButtons($fullURL,$text_title,$fb,$tw,$gp) {
 //NB $all is bool (FALSE = takes $max_recent from config.php) $category is the category name from GET (null = all categories)
 function showPodcastEpisodes($all,$category) { 
 
+    include ("$absoluteurl"."core/admin/queries.php");  
+    
 	include("core/includes.php");
 	$finalOutputEpisodes = NULL; // declare final output to return
 	
@@ -404,7 +406,7 @@ function showPodcastEpisodes($all,$category) {
 		//retrieve existing categories (description/long name)
 		//NB $existingCategories[$category] is category full name (not just ID)
 		$existingCategories = readPodcastCategories ($absoluteurl); 
-
+                
 		$category_header = '<div>';
 			if (isset($existingCategories[$category])) {
 			$category_header .= '<h3 class="sectionTitle"><a href="'.$url.'feed.php?cat='.$category.'"><i class="fa fa-rss "></i> '.$existingCategories[$category].'</a></h3>';
@@ -414,8 +416,11 @@ function showPodcastEpisodes($all,$category) {
 
 	// Open podcast directory and read all the files contained
 	$fileNamesList = readMediaDir ($absoluteurl,$upload_dir);
-
-
+        
+        $fileLists = json_decode(readData());
+        
+       // echo $fileLists->title;
+        
 	if (empty($fileNamesList)) { // If media directory is empty
 		$finalOutputEpisodes .= '<div class="topseparator"><p>'._("No episodes here yet...").'</p></div>';
 	} 
@@ -425,36 +430,36 @@ function showPodcastEpisodes($all,$category) {
 
 		//if isset pagination variable in GET
 		if (isset($_GET["pgn"]) AND is_numeric($_GET["pgn"])) {
+                    
 			$maxC = $episodeperpage * $_GET["pgn"];
 			$minC = $episodeperpage* $_GET["pgn"] - $episodeperpage;
 		} 
 		//if home page or no pages are set in GET 
 		else {
+                    
 			$maxC = $episodeperpage;
 			$minC = 0;
 		}
-
-		// Loop through each file in the media directory
-		foreach ($fileNamesList as $singleFileName) {
-
+                
+                foreach ($fileLists as $singleFile) {
+                 
 			$resulting_episodes = NULL; //declare the 1st time and then reset
 
 			//If current episode won't be displayed in this page, skip it and break the loop
 			if ($episodesCounter > $maxC) {
 				//NB. count($fileNamesList)/2 is the total number of episodes
-				$episodesCounter = count($fileNamesList)/2; 
+				$episodesCounter = count($fileLists)/2; 
 				break;
 			}
 			//Else if this episode is shown in this page, or no limitation in $max_recent (i.e. home page)
 			else if ($episodesCounter < $max_recent OR $max_recent == NULL) { 
-
-				////Validate the current episode
+                            ////Validate the current episode
 				//NB. validateSingleEpisode returns [0] episode is supported (bool), [1] Episode Absolute path, [2] Episode XML DB absolute path,[3] File Extension (Type), [4] File MimeType, [5] File name without extension, [6] episode file supported but to XML present
 				$thisPodcastEpisode = validateSingleEpisode($singleFileName);
-
 			
+                               
 				////If episode is supported and has a related xml db, and if it's not set to a future date OR if it's set for a future date but you are logged in as admin
-				if (($thisPodcastEpisode[0]==TRUE AND !publishInFuture($thisPodcastEpisode[1])) OR ($thisPodcastEpisode[0]==TRUE AND publishInFuture($thisPodcastEpisode[1]) AND isUserLogged())) { 
+				//if (($thisPodcastEpisode[0]==TRUE AND !publishInFuture($thisPodcastEpisode[1])) OR ($thisPodcastEpisode[0]==TRUE AND publishInFuture($thisPodcastEpisode[1]) AND isUserLogged())) { 
 
 					////Parse XML data related to the episode 
 					// NB. Function parseXMLepisodeData returns: [0] episode title, [1] short description, [2] long description, [3] image associated, [4] iTunes keywords, [5] Explicit language,[6] Author's name,[7] Author's email,[8] PG category 1, [9] PG category 2, [10] PG category 3, [11] file_info_size, [12] file_info_duration, [13] file_info_bitrate, [14] file_info_frequency, [15] embedded image in mp3
@@ -491,62 +496,79 @@ function showPodcastEpisodes($all,$category) {
 					} 
 
 					////Title
-					$resulting_episodes .= '<h3 class="episode_title"><a href="?name='.$thisPodcastEpisode[5].'.'.$thisPodcastEpisode[3].'">'.$thisPodcastEpisodeData[0];
+					$resulting_episodes .= '<h3 class="episode_title"><a href="?name='.$singleFile->file_name_with_ext.'&id='.$singleFile->id.'">'.$singleFile->title;
 					if (isItAvideo($thisPodcastEpisode[3])) $resulting_episodes .= '&nbsp;<i class="fa fa-youtube-play"></i>'; //add video icon
 					$resulting_episodes .= '</a></h3>';
 
 					////Date
 					$resulting_episodes .= '<p class="episode_date">';
 					$thisEpisodeDate = filemtime($thisPodcastEpisode[1]);
+                                        
 					if ($thisEpisodeDate > time()) { //if future date
 					$resulting_episodes .= '<i class="fa fa-clock-o fa-2x"></i>  ';	//show watch icon
 					}
 					$episodeDate = date ($dateformat, $thisEpisodeDate);
-					$resulting_episodes .= $episodeDate.'</p>';
+                                        
+                                        $episodeDate = date ($dateformat, $singleFile->publish_date);
+                                        
+                                        $originalDate = $singleFile->publish_date;
+                                        $newDate = date("d-m-Y", strtotime($originalDate));
+                                        
+					$resulting_episodes .= $newDate.'</p>';
 
 					
 					//// Edit/Delete button for logged user (i.e. admin)
 					if (isUserLogged()) { 
-						$resulting_episodes .= '<p><a class="btn btn-inverse btn-xs btn-mini" href="?p=admin&amp;do=edit&amp;=episode&amp;name='.urlencode($thisPodcastEpisode[5]).'.'.$thisPodcastEpisode[3].'">'._("Edit / Delete").'</a></p>';
+						$resulting_episodes .= '<p><a class="btn btn-inverse btn-xs btn-mini" href="?p=admin&amp;do=edit&amp;=episode&amp;name='.urlencode($singleFile->file_name_with_ext).'&id='.$singleFile->id.'">'._("Edit / Delete").'</a></p>';
 					}
 					
 					
-							//Show Image embedded in the mp3 file or image associated in the images/ folder from previous versions of PG (i.e. 1.4-) - Just jpg and png extension supported
-						if (file_exists($absoluteurl.$img_dir.$thisPodcastEpisode[5].'.jpg')) {
-						$resulting_episodes .= '<img class="episode_image" src="'.$url.$img_dir.$thisPodcastEpisode[5].'.jpg" alt="'.$thisPodcastEpisodeData[0].'" />';
-						} 
-						else if (file_exists($absoluteurl.$img_dir.$thisPodcastEpisode[5].'.png')) {
-						$resulting_episodes .= '<img class="episode_image" src="'.$url.$img_dir.$thisPodcastEpisode[5].'.png" alt="'.$thisPodcastEpisodeData[0].'" />';
-						}
+                                        //Show Image embedded in the mp3 file or image associated in the images/ folder from previous versions of PG (i.e. 1.4-) - Just jpg and png extension supported
+					if (file_exists($absoluteurl.$img_dir.$thisPodcastEpisode[5].'.jpg')) {
+                                            $resulting_episodes .= '<img class="episode_image" src="'.$url.$img_dir.$thisPodcastEpisode[5].'.jpg" alt="'.$thisPodcastEpisodeData[0].'" />';
+					} 
+					else if (file_exists($absoluteurl.$img_dir.$thisPodcastEpisode[5].'.png')) {
+                                            $resulting_episodes .= '<img class="episode_image" src="'.$url.$img_dir.$thisPodcastEpisode[5].'.png" alt="'.$thisPodcastEpisodeData[0].'" />';
+					}
 
 
 					//// Short Description
-					$resulting_episodes .= '<p>'.$thisPodcastEpisodeData[1].'</p>';
-
+					$resulting_episodes .= '<p>'.$singleFile->short_desc.'</p>';
 
 					////Buttons (More, Download, Watch)
 					$resulting_episodes .= showButtons($thisPodcastEpisode[5],$thisPodcastEpisode[3],$url,$upload_dir,$episodesCounter,$thisPodcastEpisode[1],$enablestreaming);
 
 					
+                                        
+                                        $path_info = pathinfo($singleFile->file_name_with_ext);
+
+                                        $fileType = $path_info['extension'];
+                                        
 					////Other details (file type, duration, bitrate, frequency)					
 					//NB. read from XML DB (except file extension = $thisPodcastEpisode[3]).
-					$episodeDetails = _('Filetype:')." ".strtoupper($thisPodcastEpisode[3]);
-					if ($thisPodcastEpisodeData[11] != NULL) $episodeDetails .= ' - '._('Size:')." ".$thisPodcastEpisodeData[11]._("MB");
+					$episodeDetails = _('Filetype:')." ".strtoupper($fileType);
+					if ($singleFile->file_size != NULL) $episodeDetails .= ' - '._('Size:')." ".$singleFile->file_size._("MB");
 					
-					if($thisPodcastEpisodeData[12]!=NULL) { // display file duration
-					$episodeDetails .= " - "._("Duration:")." ".$thisPodcastEpisodeData[12]." "._("m");
+					if($singleFile->file_duration !=NULL) { // display file duration
+					$episodeDetails .= " - "._("Duration:")." ".$singleFile->file_duration." "._("m");
 					}
-					if($thisPodcastEpisode[3]=="mp3" AND $thisPodcastEpisodeData[13] != NULL AND $thisPodcastEpisodeData[14] != NULL) { //if mp3 show bitrate and frequency
-						$episodeDetails .= " (".$thisPodcastEpisodeData[13]." "._("kbps")." ".$thisPodcastEpisodeData[14]." "._("Hz").")";
+					if($fileType=="mp3" AND $singleFile->file_bitrate != NULL AND $singleFile->file_frequency != NULL) { //if mp3 show bitrate and frequency
+						$episodeDetails .= " (".$singleFile->file_bitrate[13]." "._("kbps")." ".$singleFile->file_frequency." "._("Hz").")";
 					}
 					$resulting_episodes .= '<p class="episode_info">'.$episodeDetails.'</p>';
 
 
 					////Playes: audio (flash/html5) and video (html5), for supported files and browsers
 					//if audio and video streaming is enabled in PG options
-					if ($enablestreaming=="yes" AND !detectMobileDevice()) { 
+					/*if ($enablestreaming=="yes" AND !detectMobileDevice()) { 
 						$resulting_episodes .= showStreamingPlayers ($thisPodcastEpisode[5],$thisPodcastEpisode[3],$url,$upload_dir,$episodesCounter);
+					}*/
+                                        
+                                        
+                                        if ($enablestreaming=="yes" AND !detectMobileDevice()) { 
+						$resulting_episodes .= showStreamingPlayers ("2017-02-23_travel3",$fileType,$url,$upload_dir,$episodesCounter);
 					}
+                                        
 					$isvideo = FALSE; //RESET isvideo for next episode
 
 					
@@ -564,17 +586,18 @@ function showPodcastEpisodes($all,$category) {
 					}
 
 					$episodesCounter++; //increment counter
-				} // END - If episode is supported and has a related xml db
+				//} // END - If episode is supported and has a related xml db
 
 				
 				if ($episodesCounter <= $maxC AND $episodesCounter > $minC) {
 					//Append this episode to the final output to return
 					$finalOutputEpisodes .= $resulting_episodes;
 				}
+                        }
+                }
+                
+                
 
-			} //END - Else if this episode is shown in this page, or no limitation in $max_recent 
-
-		} // END - Loop through each file in the media directory
 
 	} // END - If media directory contains files
 

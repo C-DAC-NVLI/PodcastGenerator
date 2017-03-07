@@ -8,6 +8,9 @@
 # This is Free Software released under the GNU/GPL License.
 ############################################################
 
+
+include ("$absoluteurl"."core/admin/queries.php");  
+
 ########### Security code, avoids cross-site scripting (Register Globals ON)
 if (isset($_REQUEST['GLOBALS']) OR isset($_REQUEST['absoluteurl']) OR isset($_REQUEST['amilogged']) OR isset($_REQUEST['theme_path'])) { exit; } 
 ########### End
@@ -34,17 +37,22 @@ else {
 	if (isset($_GET['name']) AND $_GET['name'] != NULL ) {
 		$singleEpisode = $_GET['name'];
 
-
-		////Validate the current episode
-				//NB. validateSingleEpisode returns [0] episode is supported (bool), [1] Episode Absolute path, [2] Episode XML DB absolute path,[3] File Extension (Type), [4] File MimeType, [5] File name without extension
-	$thisPodcastEpisode = validateSingleEpisode($singleEpisode);
-
-				////If episode is supported and has a related xml db, and if it's not set to a future date OR if it's set for a future date but you are logged in as admin
-				if ($thisPodcastEpisode[0]==TRUE) { 
+        if (isset($_GET['id']) AND $_GET['id'] != NULL ) 
+		$idEpisode = $_GET['id'];  
+                
+                
+        $readSingleData = json_decode(readSingleData($idEpisode));
+                
+        //print_r($readSingleData);
+        
+        //echo $readSingleData;
+        
+        ////If episode is supported and has a related xml db, and if it's not set to a future date OR if it's set for a future date but you are logged in as admin
+				if ($readSingleData) { 
 
 					////Parse XML data related to the episode 
 					// NB. Function parseXMLepisodeData returns: [0] episode title, [1] short description, [2] long description, [3] image associated, [4] iTunes keywords, [5] Explicit language,[6] Author's name,[7] Author's email,[8] PG category 1, [9] PG category 2, [10] PG category 3, [11] file_info_size, [12] file_info_duration, [13] file_info_bitrate, [14] file_info_frequency
-					$thisPodcastEpisodeData = parseXMLepisodeData($thisPodcastEpisode[2]);	
+					/*$thisPodcastEpisodeData = parseXMLepisodeData($thisPodcastEpisode[2]);	
 		
 
 						//// content definition and depuration (solves problem with quotes etc...)
@@ -60,12 +68,21 @@ else {
 						$text_category1 = $thisPodcastEpisodeData[8];
 						$text_category2 = $thisPodcastEpisodeData[9];
 						$text_category3 = $thisPodcastEpisodeData[10];
-						
-						
-				
-						#########
-
-
+					*/	
+                                    
+                                    $text_title = $readSingleData[0]->title; //title
+						$thisPodcastEpisodeData[1] = $readSingleData[0]->short_desc; //short desc
+						$text_shortdesc = $readSingleData[0]->short_desc; //short desc
+						$text_longdesc = $readSingleData[0]->long_desc; //long desc
+						$text_keywordspg = $readSingleData[0]->keywords; //Keywords
+						$text_authornamepg = $readSingleData[0]->author_name; //author's name
+						$text_authoremailpg = $readSingleData[0]->author_email;
+						$text_explicitpg = $readSingleData[0]->explicit_content;
+						$episodedate = filemtime ($readSingleData[0]->publish_date);
+                                                //$episodedate = $readSingleData[0]->publish_date;
+						$text_category1 = $readSingleData[0]->title;
+						$text_category2 = $readSingleData[0]->title;
+						$text_category3 = $readSingleData[0]->title;
 
 
 
@@ -104,11 +121,11 @@ $PG_mainbody .= '<input type="hidden" name="userfile" value="'.$_GET['name'].'">
 		
 		
 		### INCLUDE CATEGORIES FORM
-						if ($categoriesenabled == "yes") { // if categories are enabled in config.php
+						/*if ($categoriesenabled == "yes") { // if categories are enabled in config.php
 
 							include("$absoluteurl"."core/admin/showcat.php");
 
-						} 
+						} */
 						//else { // if categories are disabled, then use an empty value
 							//$PG_mainbody .= '<input type="hidden" name="category[0]" value="">';
 							//	}
@@ -223,7 +240,8 @@ $PG_mainbody .= '<input type="hidden" name="userfile" value="'.$_GET['name'].'">
 				<br />
 				'._("Do you really want to permanently delete this episode?").' 
 				
-				<a class="btn btn-danger btn-mini" href="?p=admin&do=delete&file='.$thisPodcastEpisode[5].'&ext='.$thisPodcastEpisode[3].'">'._("YES, I am sure").'</a>
+
+				<a class="btn btn-danger btn-mini" href="?p=admin&do=delete&file=&ext=">'._("YES, I am sure").'</a>
 				
 				</div>
 				
